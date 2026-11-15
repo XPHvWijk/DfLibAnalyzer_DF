@@ -1,0 +1,98 @@
+Use LA_cObject.pkg   
+Use cJsonObject.pkg
+Use LA_cSeqFileHelper.pkg
+
+Struct tSettings  
+  String  sLib_Analyzer
+  String  sAdditional_Extensions
+  Boolean bScan_Images
+  String  sBitmap_Extensions
+  String  sCompare_Tool
+  Boolean bPro_edition         
+  String  sEditor_or_Explorer
+  String  sEditor_Location
+  String  sLast_Workspace 
+  Boolean bLast_Verbose
+  Boolean bLast_Recursive
+  String  sLast_Json_File     
+End_Struct           
+
+Class cSettings_Read_Write is a LA_cObject
+  
+  Procedure Construct_Object
+    Forward Send Construct_Object
+    
+  End_Procedure
+  
+  Function giveProgram_Path Returns String
+    String  sProgramPath
+    Handle  hoWorkSpace                                
+
+    Get phoWorkspace  of ghoApplication to hoWorkSpace
+    Get psProgramPath of hoWorkSpace    to sProgramPath
+    
+    If ((Right (sProgramPath, 1)) <> "\") Begin
+      Move (sProgramPath + "\") to sProgramPath
+    End
+    
+    Function_Return sProgramPath
+  End_Function
+
+  Procedure doWrite_Settings String sFile tSettings stSettings
+    String  sProgramPath           
+    String  sPath_File
+    Handle  hoJson
+    String  sData
+    Handle  hoFile   
+    
+    Get giveProgram_Path to sProgramPath
+    Move (sProgramPath + sFile) to sPath_File
+    
+    Get Create (RefClass (cJsonObject)) to hoJson
+    
+    Set peWhitespace    of hoJson to jpWhitespace_Pretty
+    Send DataTypeToJson of hoJson stSettings
+    Get Stringify       of hoJson to sData
+    Send Destroy of hoJson    
+    
+    Get Create (RefClass (cSeqFileHelper)) to hoFile
+    Send WriteFileFromVariantStr of hoFile sPath_File CP_UTF8 sData
+    Send Destroy of hoFile
+  End_Procedure
+    
+  Function doRead_Settings String sFile Returns tSettings
+    tSettings stSettings
+    
+    String  sProgramPath           
+    String  sPath_File   
+    Boolean bFileExists
+    Handle  hoFile 
+    Handle  hoJson 
+    Boolean bSuccess
+    String  sJson 
+    String  sData
+    
+    Get giveProgram_Path to sProgramPath
+    Move (sProgramPath + sFile) to sPath_File    
+    
+    File_Exist sPath_File bFileExists
+    
+    If (bFileExists) Begin
+      Get Create (RefClass (cSeqFileHelper)) to hoFile
+      
+      Get ReadFileToVariantStr of hoFile sPath_File CP_UTF8 to sJson
+    
+      Get Create (RefClass (cJsonObject)) to hoJson
+      
+      Set pbRequireAllMembers of hoJson to False
+      Get ParseString         of hoJson sJson to bSuccess
+      Get JsonToDataType      of hoJson to stSettings
+      
+      Send Destroy of hoJson
+      Send Destroy of hoFile
+    End
+    
+    Function_Return stSettings
+  End_Function  
+  
+End_Class

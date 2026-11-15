@@ -1,0 +1,1467 @@
+Use Windows.pkg
+Use DFClient.pkg   
+Use LA_cForm.pkg
+Use LA_cCheckbox.pkg
+Use LA_cButton.pkg
+Use LA_cTabDialog.pkg
+Use LA_cTextEdit.pkg
+Use LA_cCJGrid.pkg
+Use LA_cCJGridColumn.pkg
+Use cFileDialog_Form.pkg
+Use LA_cModalPanel.pkg
+Use LA_cComboForm.pkg
+Use LA_cTreeView.pkg
+
+Use Export_Read_and_Parse_BPO.pkg
+Use Export_Read_JSON_BPO.pkg
+
+Use cFileSystem\cFilesystem.pkg
+Use cSplitterContainer.pkg   
+
+Use Settings.dg
+
+Object oDF_Library_Analyze is a LA_cModalPanel
+  Property tLibAnalyzerOutput pstLibAnalyzerOutput
+  
+  Property Boolean pbRead_Json_file
+  
+  Property Handle  phoConflicts_CJGrid  
+  Property Handle  phoErrors_Related_Workspace_CJGrid    
+  Property Handle  phoWarnings_Related_Workspace_CJGrid
+  
+
+  Set Border_Style to Border_Thick
+  Set Size to 503 836
+  Set Location to 4 2
+  Set Label to "DF Library Analyze"      
+  Set Icon to "DfLibAnalyzer.ico"
+  Set piMinSize to 503 836
+  Set piMaxSize to 1000 1200   
+  Set Locate_Mode to Center_On_Screen
+  
+  Procedure Page_Object Boolean bPage
+    Forward Send Page_Object bPage
+    If (bPage) Begin
+      Set Icon to "DfLibAnalyzer.ico"
+    End
+  End_Procedure   
+
+  Procedure doOpen_in_Editor_Explorer String sPath_File
+    tSettings stSettings 
+    
+    String  sCommand_Line
+    
+    Get pstSettings of ghoApplication to stSettings   
+    
+    If (stSettings.sEditor_or_Explorer = "Open file in Selected Editor") Begin
+      If (stSettings.sEditor_Location <> "") Begin
+        Move ('"' + stSettings.sEditor_Location + '" "' + sPath_File + '"') to sCommand_Line   
+      End               
+    End
+    Else Begin
+      //
+      // PHvW 15/09/2026 Other option open file in windows explorer 
+      // 
+      // way to do it: %SYSTEMROOT%\explorer.exe /select,path_file_name 
+      //
+      Move ('"' + 'c:\Windows\explorer.exe' + '" ' + '/select,' + '"' + sPath_File + '"') to sCommand_Line
+    End
+    
+    Runprogram Background sCommand_Line
+  End_Procedure
+
+  Object oTop_Container3d is a Container3d
+    Set Location to 5 5
+    Set Size to 56 827
+    Set Border_Style to Border_Normal
+    Set peAnchors to anTopLeftRight
+
+    Object oWorkspace_Form is a cFileDialog_Form
+      Set Location to 5 70
+      Set Size to 12 470
+      Set Label to "Workspace:"   
+      Set Filter_String to "Workspace File|*.sws|All Files|*.*"       
+      Set psPlaceHolder to "Find the full path to the workspace you want to analyze"      
+      
+      Procedure onChange                       
+        String  sValue
+        
+        Get value to sValue
+        Set psLast_Workspace of ghoApplication to sValue
+      End_Procedure  
+      
+    End_Object
+
+    Object oVerbose_Checkbox is a LA_cCheckbox
+      Set Location to 22 71
+      Set Size to 10 50
+      Set Label to "Verbose"
+      Set Checked_State to True
+
+      Procedure onChange                       
+        Boolean bState
+        
+        Get Checked_State to bState
+        
+        Set pbLast_Verbose of ghoApplication to bState
+      End_Procedure  
+      
+    End_Object
+
+    Object oRecursive_Checkbox is a LA_cCheckbox
+      Set Location to 22 132
+      Set Size to 10 50
+      Set Label to "Recursive"
+      Set Checked_State to True
+
+      Procedure onChange                       
+        Boolean bState
+        
+        Get Checked_State to bState
+        
+        Set pbLast_Recursive of ghoApplication to bState
+      End_Procedure  
+      
+    End_Object
+
+    Object oJSON_Output_File_Form is a cFileDialog_Form
+      Set Location to 35 70
+      Set Size to 12 410
+      Set Label to "JSON Output File:" 
+      Set Filter_String to "json Files|*.json|All Files|*.*"
+      Set CreatePrompt_State to False
+      Set FileMustExist_State to False
+      Set psPlaceHolder to "Where does the analyze files needs to be created."      
+
+      Procedure onChange                       
+        String  sValue
+        
+        Get value to sValue
+        Set psLast_Json_File of ghoApplication to sValue
+      End_Procedure  
+      
+    End_Object  
+    
+    Object oProcess_Button is a LA_cButton
+      Set Location to 33 490
+      Set Label to "Process"    
+      Set psToolTip to "Generates the json file through the dflibanalyzer. And will fill all information."
+    
+      Procedure OnClick   
+        tLibAnalyzerOutput stLibAnalyzerOutput
+        tSettings stSettings
+        
+        Boolean bFileExists
+        String  sCommand_Line
+        String  sCommand_Line_Parameters  
+        String  sWorking_Dir         
+        Integer iVoid
+        
+        Get pstSettings of ghoApplication to stSettings 
+        
+        If (stSettings.sLib_Analyzer = "") Begin
+          Send Info_Box "Please enter in Setting the path en file to the DfLibAnalyzer.exe" "Pleaee Note"
+          
+          Procedure_Return
+        End
+        Else Begin
+          File_Exist stSettings.sLib_Analyzer bFileExists
+          
+          If (bFileExists = False) Begin
+            Send Info_Box "The DfLibAnalyzer.exe cannot be found in Current location in Settings" "Pleaee Note"
+            
+            Procedure_Return
+          End
+        End  
+        
+        If (stSettings.sLast_Workspace = "") Begin
+          Send Info_Box "Please enter a workspace" "Pleaee Note"
+          
+          Procedure_Return
+        End
+        Else Begin
+          File_Exist stSettings.sLast_Workspace bFileExists
+          
+          If (bFileExists = False) Begin
+            Send Info_Box "The workspace.sws annot be found in Current location given" "Pleaee Note"
+            
+            Procedure_Return
+          End
+        End  
+        
+        //
+        // PHvW 30/08/2026 Now we make the parameter String       // 1.0.1	dflibanalyzer.exe "F:\Data\HRp5\V-60\HRp5.V-60d - 26.0.sws" -v > text_1_0_7.txt
+        //
+        Move (sCommand_Line + '"' + stSettings.sLib_Analyzer + '" ') to sCommand_Line  
+        //Move (sCommand_Line + "%windir%\system32\cmd.exe ") to sCommand_Line  
+        //Move ('"' + stSettings.sLib_Analyzer + '" ') to sCommand_Line_Parameters
+        If (stSettings.sAdditional_Extensions <> "") Begin
+          Move (sCommand_Line_Parameters + "--extensions " + stSettings.sAdditional_Extensions + " ") to sCommand_Line_Parameters
+        End
+        If (stSettings.bLast_Verbose) Begin
+          Move (sCommand_Line_Parameters + "-v ") to sCommand_Line_Parameters
+        End
+        If (stSettings.bLast_Recursive) Begin
+          Move (sCommand_Line_Parameters + "-r ") to sCommand_Line_Parameters
+        End     
+        If ((stSettings.bScan_Images) and (stSettings.sBitmap_Extensions <> "")) Begin
+          Move (sCommand_Line_Parameters + "--scan-bitmap-path ")                                 to sCommand_Line_Parameters   
+          Move (sCommand_Line_Parameters + "--extensions " + stSettings.sBitmap_Extensions + " ") to sCommand_Line_Parameters
+        End     
+        
+        Move (sCommand_Line_Parameters + '"'   + stSettings.sLast_Workspace + '" ') to sCommand_Line_Parameters
+
+        Move (sCommand_Line_Parameters + "--json ") to sCommand_Line_Parameters
+        
+        Move (sCommand_Line_Parameters + '"' + stSettings.sLast_Json_File + '"')  to sCommand_Line_Parameters
+        
+        Runprogram Wait sCommand_Line sCommand_Line_Parameters     
+        
+        File_Exist stSettings.sLast_Json_File bFileExists
+        
+        If (bFileExists) Begin
+          Get giveLibAnalyzerOutput stSettings.sLast_Json_File to stLibAnalyzerOutput 
+        
+          Set pstLibAnalyzerOutput to stLibAnalyzerOutput
+          Set pbRead_Json_file     to True
+        
+          Send doFill_with_the_JSON        
+        End
+        Else Begin
+          Set pbRead_Json_file     to False
+        End
+      End_Procedure
+                                                                   
+    End_Object  
+
+    Object oSettings_Button is a LA_cButton
+      Set Location to 5 767
+      Set Label to 'Settings'
+      Set peAnchors to anTopRight
+      Set psToolTip to "Set the setting needed to work with the program."
+    
+      Procedure OnClick  
+        Send doStart_Settings
+      End_Procedure
+    
+    End_Object
+
+    Object oHelp_Button is a LA_cButton
+      Set Location to 21 767
+      Set Label to 'Help'
+      Set peAnchors to anTopRight
+      Set psToolTip to "Should a page with help......"
+    
+      Procedure OnClick  
+        Send info_box "To be done" "Is this needed?"
+      End_Procedure
+    
+    End_Object
+
+    Object oAbout_Button is a LA_cButton
+      Set Location to 37 767
+      Set Label to 'About'
+      Set peAnchors to anTopRight
+      Set psToolTip to "Well lets keep this s asecret !!"
+    
+      Procedure OnClick  
+        Send info_box "To be done" "Is this needed?"
+      End_Procedure
+    
+    End_Object
+    
+  End_Object
+
+  Object oAll_Results_TabDialog is a LA_cTabDialog
+    Set Location to 65 4
+    Set Size to 416 827
+    Set peAnchors to anAll
+
+    Object oDependency_Tree_TabPage is a TabPage
+      Set Label to 'Dependency Tree'
+
+      Object oDependency_Tree is a LA_cTreeView
+        Set Location to 5 5
+        Set Size to 386 402
+        Set peAnchors to anAll
+
+        Object oImageList is a cImageList32
+          Set piMaxImages to 6
+
+          Procedure OnCreate // add the images
+            Integer iImage
+
+            Get AddTransparentImage 'Dataflex.bmp'  clFuchsia to iImage    // 0
+            Get AddTransparentImage 'Library.bmp'   clFuchsia to iImage    // 1
+            Get AddTransparentImage 'Ambiguous.bmp' clFuchsia to iImage    // 2      
+            Get AddTransparentImage 'Conflict.bmp'  clFuchsia to iImage    // 3
+            Get AddTransparentImage 'Reverse.bmp'   clFuchsia to iImage    // 4
+            Get AddTransparentImage 'missing.bmp'   clFuchsia to iImage    // 5
+          End_Procedure
+
+        End_Object   
+        
+        Set ImageListObject   to (oImageList (Self))
+            
+        Procedure doAdd_Dependency tLibAnalyzerDependencyNode stLibAnalyzerDependencyNode Handle hoParent
+          Integer iArray_Count
+          Integer icCount
+          Handle  hHandle 
+          Handle  hVoid
+          
+          Get AddTreeItem stLibAnalyzerDependencyNode.name hoParent 0 1 1 to hHandle
+          
+          Move (SizeOfArray (stLibAnalyzerDependencyNode.dependencies)) to iArray_Count
+          If (iArray_Count > 0) Begin   
+            For icCount from 0 to (iArray_Count - 1)
+              Send doAdd_Dependency stLibAnalyzerDependencyNode.dependencies[icCount] hHandle
+            Loop
+          End   
+          
+          Move (SizeOfArray (stLibAnalyzerDependencyNode.ambiguousUse)) to iArray_Count
+          If (iArray_Count > 0) Begin
+            For icCount from 0 to (iArray_Count - 1)
+              Get AddTreeItem ("Ambiguous use - " + stLibAnalyzerDependencyNode.ambiguousUse[icCount]) hHandle 0 2 2 to hVoid
+            Loop
+          End
+          
+          Move (SizeOfArray (stLibAnalyzerDependencyNode.conflictingUse)) to iArray_Count
+          If (iArray_Count > 0) Begin
+            For icCount from 0 to (iArray_Count - 1)
+              Get AddTreeItem ("Conflicting File Resolution - " + stLibAnalyzerDependencyNode.conflictingUse[icCount]) hHandle 0 3 3 to hVoid
+            Loop
+          End
+
+          Move (SizeOfArray (stLibAnalyzerDependencyNode.ReverseUse)) to iArray_Count
+          If (iArray_Count > 0) Begin
+            For icCount from 0 to (iArray_Count - 1)
+              Get AddTreeItem ("Reverse Use References - " + stLibAnalyzerDependencyNode.reverseUse[icCount]) hHandle 0 4 4 to hVoid
+            Loop
+          End
+
+          Move (SizeOfArray (stLibAnalyzerDependencyNode.missingDependencies)) to iArray_Count
+          If (iArray_Count > 0) Begin
+            For icCount from 0 to (iArray_Count - 1)
+              Get AddTreeItem ("Missing - " + stLibAnalyzerDependencyNode.missingDependencies[icCount]) hHandle 0 5 5 to hVoid
+            Loop
+          End
+        End_Procedure
+      
+        Procedure OnCreateTree 
+          tLibAnalyzerOutput         stLibAnalyzerOutput             
+          tLibAnalyzerDependencyNode stLibAnalyzerDependencyNode           
+          
+          Integer iArray_Count
+          Integer icCount
+          
+          Handle  hRoot  
+          
+          Get pstLibAnalyzerOutput to stLibAnalyzerOutput
+          
+          Move stLibAnalyzerOutput.tree to stLibAnalyzerDependencyNode  
+          
+          Send ClearAll
+          Set CurrentTreeItem to hRoot
+          Get AddTreeItem stLibAnalyzerDependencyNode.name hRoot 0 0 0 to hRoot  
+          
+          Move (SizeOfArray (stLibAnalyzerDependencyNode.dependencies)) to iArray_Count
+          If (iArray_Count) Begin  
+            For icCount from 0 to (iArray_Count - 1)
+              Send doAdd_Dependency stLibAnalyzerDependencyNode.dependencies[icCount] hRoot
+            Loop
+           
+            // Add tree items here, via AddTreeItem:
+            // Get AddTreeItem sText hRoot iItemData iImage iSelImage to hItem
+          End   
+          Send DoExpandAll hRoot     
+          Set CurrentTreeItem to hRoot
+        End_Procedure
+      
+      End_Object  
+      
+    End_Object
+
+    Object oConflict_in_Files_TabPage is a TabPage
+      Set Label to "Conflict in files"
+
+      Object oFile_CJGrid is a LA_cCJGrid
+        Set Location to 5 5
+        Set Size to 367 269
+        Set peAnchors to anTopBottomLeft 
+        Set pbAllowAppendRow to False
+        Set pbAllowDeleteRow to False
+        Set pbAllowInsertRow to False
+        Set pbAutoAppend to False        
+        Set pbAllowColumnRemove to False
+        Set pbAllowColumnReorder to False
+
+        Object oFile_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 326
+          Set psCaption to "File"
+          Set pbEditable to False
+        End_Object
+
+        Object oDifferent_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 64
+          Set psCaption to "Different"
+          Set pbCheckbox to True
+          Set pbEditable to False
+        End_Object
+      
+        Object oCount_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 58
+          Set psCaption to "Count"
+          Set peTextAlignment to xtpAlignmentCenter
+          Set pbEditable to False
+        End_Object
+        
+        Object oArray_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 58
+          Set psCaption to "Array"
+          Set pbVisible to False
+        End_Object
+
+        Procedure doFill_with_Data
+          tLibAnalyzerOutput stLibAnalyzerOutput 
+          tLibAnalyzerConflictingFile[] staLibAnalyzerConflictingFile  
+          tDataSourceRow[] staDataSourceRows
+          
+          Integer iArray_Count
+          Integer icCount
+          Integer iIdentical  
+          Integer iArray_Count_Candidates          
+          Integer icCount_Candidates
+          
+          Get pstLibAnalyzerOutput to stLibAnalyzerOutput            
+          Move stLibAnalyzerOutput.conflictingFiles to staLibAnalyzerConflictingFile
+          
+          Move (SizeOfArray (staLibAnalyzerConflictingFile)) to iArray_Count
+          
+          For icCount from 0 to (iArray_Count - 1)
+            Move staLibAnalyzerConflictingFile[icCount].name to staDataSourceRows[icCount].sValue[0]
+            Move 0 to iIdentical   
+            Move (SizeOfArray (staLibAnalyzerConflictingFile[icCount].candidates)) to iArray_Count_Candidates
+            For icCount_Candidates from 0 to (iArray_Count_Candidates -1)
+              Move (iIdentical + staLibAnalyzerConflictingFile[icCount].candidates[icCount_Candidates].group) to iIdentical 
+            Loop                                                                                                           
+            If (iIdentical > 0) Begin
+              Move True                  to staDataSourceRows[icCount].sValue[1]
+            End
+            Else Begin
+              Move False                 to staDataSourceRows[icCount].sValue[1]
+            End
+            Move iArray_Count_Candidates to staDataSourceRows[icCount].sValue[2]
+            Move icCount                 to staDataSourceRows[icCount].sValue[3]
+          Loop
+
+          Send InitializeData staDataSourceRows          
+        End_Procedure
+        
+        Procedure OnRowChanged Integer iOldRow Integer iNewSelectedRow  
+          Handle  hoConflicts_CJGrid  
+          Integer iArray 
+          
+          Get phoConflicts_CJGrid to hoConflicts_CJGrid
+          
+          If (hoConflicts_CJGrid > 0) Begin
+            Get RowValue of oArray_CJGridColumn iNewSelectedRow to iArray
+            Send doFill_with_Data of oConflicts_CJGrid iArray
+          End
+        End_Procedure
+
+        Procedure OnCreate
+          Forward Send OnCreate 
+          
+          Send doFill_with_Data
+        End_Procedure
+    
+      End_Object
+
+      Object oConflicts_CJGrid is a LA_cCJGrid
+        Property Integer[] piMerge
+        
+        Set Location to 5 288
+        Set Size to 367 529
+        Set peAnchors to anAll
+        Set pbAllowAppendRow to False
+        Set pbAllowDeleteRow to False
+        Set pbAllowInsertRow to False
+        Set pbAutoAppend to False
+        Set pbAllowColumnRemove to False
+        Set pbAllowColumnReorder to False
+        
+        Procedure doProcess_Selection Boolean bSelected
+          Integer[] iMerge                      
+          tDataSourceRow[] staDatasourceRows
+          
+          Handle hoDataSource                   
+          
+          Boolean bPro_Edition
+          Integer iMax_Merges 
+          Integer iArray_Count  
+          Integer iFirst_Merge   
+          Integer iLocation  
+          Integer iRow       
+          
+          Get pbPro_Edition of ghoApplication to bPro_Edition
+          
+          If (bPro_Edition) Begin
+            Move 3 to iMax_Merges
+          End                    
+          Else Begin
+            Move 2 to iMax_Merges
+          End
+          
+          Get pimerge to iMerge 
+          
+          Get pstaDataSourceRows to staDatasourceRows
+          
+          Get piSelectedRow to iRow
+          
+          Move (SizeOfArray (iMerge)) to iArray_Count
+
+          If (bSelected) Begin
+            If (iArray_Count = iMax_Merges) Begin
+              Move iMerge[0] to iFirst_Merge
+              
+    
+              Move False to staDatasourceRows[iFirst_Merge].sValue[0]
+              Move True  to staDatasourceRows[iRow].sValue[0]
+              
+              Move (RemoveFromArray (iMerge, 0)) to iMerge
+              Move iRow to iMerge[-1]
+              
+              Send ReInitializeData staDatasourceRows True
+            End  
+            Else Begin
+              Move iRow to iMerge[-1]
+            End
+          End
+          Else Begin
+            Move (SearchArray (iRow, iMerge)) to iLocation
+            Move (RemoveFromArray (iMerge, iLocation)) to iMerge
+          End
+          
+          Set piMerge to iMerge
+        End_Procedure
+
+        Object oSelect_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 34
+          Set psCaption to "Select"     
+          Set pbCheckbox to True
+
+          Procedure OnSelectedRowDataChanged String sOldValue String sValue
+            Forward Send OnSelectedRowDataChanged sOldValue sValue    
+            
+            Send doProcess_Selection (sValue = 1)
+          End_Procedure
+          
+        End_Object
+
+        Object oWorkspace is a LA_cCJGridColumn
+          Set piWidth to 229
+          Set psCaption to "Workspace"
+          Set pbEditable to False
+        End_Object
+
+        Object oPath_and_File is a LA_cCJGridColumn
+          Set piWidth to 436
+          Set psCaption to "Path and File"
+          Set pbEditable to False
+        End_Object 
+        
+        Object oSize is a LA_cCJGridColumn
+          Set piWidth to 71
+          Set psCaption to "Size"
+          Set peDataType to Mask_Numeric_Window
+          Set pbEditable to False
+          Set psMask to "#0."
+        End_Object 
+        
+        Object oModified is a LA_cCJGridColumn
+          Set piWidth to 112
+          Set psCaption to "Modified"
+          Set peDataType to Mask_Datetime_Window   
+          Set pbEditable to False
+        End_Object 
+        
+        Procedure doFill_with_Data Integer iArray
+          tLibAnalyzerOutput stLibAnalyzerOutput 
+          tLibAnalyzerConflictingFileCandidate[] staLibAnalyzerConflictingFileCandidate
+          tDataSourceRow[] staDataSourceRows                    
+          Integer[] iMerge
+          
+          Boolean bRead_Json_file
+          Integer iArray_Count
+          Integer icCount    
+          Handle  hoFileSystem                      
+          Integer iSize       
+          
+          Date    dDate
+          Integer iHour
+          Integer iMinute
+          Integer iSecond            
+          DateTime dtFile
+          
+          
+          Get pbRead_Json_file to bRead_Json_file
+          
+          If (bRead_Json_file) Begin
+            Get pstLibAnalyzerOutput to stLibAnalyzerOutput            
+          
+            Move stLibAnalyzerOutput.conflictingFiles[iArray].candidates to staLibAnalyzerConflictingFileCandidate
+            Move (SizeOfArray (staLibAnalyzerConflictingFileCandidate)) to iArray_Count
+            
+            Get Create (RefClass (cFilesystem)) to hoFileSystem
+            
+            For icCount from 0 to (iArray_Count - 1)
+              Move False                                                        to staDataSourceRows[icCount].sValue[0]      
+              
+              Move staLibAnalyzerConflictingFileCandidate[icCount].workspace    to staDataSourceRows[icCount].sValue[1] 
+              Move staLibAnalyzerConflictingFileCandidate[icCount].path         to staDataSourceRows[icCount].sValue[2] 
+              //
+              // PHvW 04/10/2026 Next line give GPF in 64 bits, Not area of expertice. So just run it in 32 bits
+              //
+              Get FileSize of hoFileSystem staDataSourceRows[icCount].sValue[2] to staDataSourceRows[icCount].sValue[3]          
+              Get_File_Mod_Time staDataSourceRows[icCount].sValue[2]            to dDate iHour iMinute iSecond        
+              
+              Move dDate to dtFile
+              Move (DateAddHour   (dtFile, iHour))   to dtFile
+              Move (DateAddMinute (dtFile, iMinute)) to dtFile
+              Move (DateAddSecond (dtFile, iSecond)) to dtFile
+              
+              Move dtFile                                                       to staDataSourceRows[icCount].sValue[4]
+              
+            Loop
+                      
+            Send Destroy of hoFileSystem    
+            
+            Set piMerge to iMerge
+          End
+          
+          Send InitializeData staDataSourceRows
+        End_Procedure 
+      
+        Procedure OnCreate
+          Integer iArray_Value
+          
+          Forward Send OnCreate  
+          
+          Set phoConflicts_CJGrid to Self
+          
+          Send doFill_with_Data 0
+        End_Procedure
+      
+      End_Object
+
+      Object oMerge_Button is a LA_cButton
+        Set Location to 379 767
+        Set Label to "Merge Tool"
+        Set peAnchors to anBottomRight
+      
+        Procedure OnClick                           
+          Integer[] iMerge                          
+          tDataSourceRow[] staDataSourceRows
+          String[] saFiles
+          
+          Handle hoDataSource                   
+          String  sApplicatiun           
+          Integer iArray_Count       
+          Integer icCount
+          String  sFile                                           
+          String  sProgram
+          String  sCommand_line
+          
+          Get piMerge of oConflicts_CJGrid to iMerge  
+          Move (SizeOfArray (iMerge)) to iArray_Count
+          
+          If (iArray_Count > 1) Begin
+            Get pstaDataSourceRows of oConflicts_CJGrid to staDatasourceRows
+            
+            Move '"C:\Program Files\Araxis\Araxis Merge\Merge.exe "' to sProgram
+            For icCount from 0 to (iArray_Count - 1)
+              Move staDataSourceRows[iMerge[icCount]].sValue[2] to sFile
+              Move (sCommand_line + ' "' + sFile + '"') to sCommand_line 
+            Loop
+            
+            Runprogram Background sProgram sCommand_line
+          End
+        End_Procedure
+      
+      End_Object
+      
+    End_Object
+
+    Object oErrors_TabPage is a TabPage
+      Set Label to 'Errors'
+
+      Object oErrors_CJGrid is a LA_cCJGrid
+        Set Location to 5 5
+        Set Size to 386 402
+        Set peAnchors to anTopBottomLeft
+        Set pbAllowAppendRow to False
+        Set pbAllowDeleteRow to False
+        Set pbAllowInsertRow to False
+        Set pbAutoAppend to False        
+        Set pbAllowColumnRemove to False
+        Set pbAllowColumnReorder to False
+
+        Object oDescription_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 333
+          Set psCaption to "Description"
+          Set pbEditable to False
+        End_Object
+
+        Object oWorkspace_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 337
+          Set psCaption to "Workspace"
+          Set pbEditable to False
+        End_Object
+        
+        Object oArray_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 58
+          Set psCaption to "Array"
+          Set pbVisible to False
+        End_Object
+
+        Procedure doFill_with_Data
+          tLibAnalyzerOutput stLibAnalyzerOutput 
+          tLibAnalyzerDependencyIssue[] staLibAnalyzerDependencyIssue  
+          tDataSourceRow[] staDataSourceRows
+          
+          Boolean bRead_Json_file
+          Integer iArray_Count
+          Integer icCount
+          Integer iIdentical  
+          Integer iArray_Count_Candidates          
+          Integer icCount_Candidates
+          
+          Get pbRead_Json_file to bRead_Json_file
+          
+          If (bRead_Json_file) Begin
+            Get pstLibAnalyzerOutput to stLibAnalyzerOutput            
+            Move stLibAnalyzerOutput.errors to staLibAnalyzerDependencyIssue
+            
+            Move (SizeOfArray (staLibAnalyzerDependencyIssue)) to iArray_Count
+            
+            For icCount from 0 to (iArray_Count - 1)
+              Move staLibAnalyzerDependencyIssue[icCount].description to staDataSourceRows[icCount].sValue[0]
+              Move staLibAnalyzerDependencyIssue[icCount].workspace   to staDataSourceRows[icCount].sValue[1]
+              Move icCount                                            to staDataSourceRows[icCount].sValue[2]
+            Loop
+          End
+          
+          Send InitializeData staDataSourceRows          
+        End_Procedure
+        
+        Procedure OnRowChanged Integer iOldRow Integer iNewSelectedRow  
+          Boolean bRead_Json_file
+          Handle  hoErrors_Related_Workspace_CJGrid
+          Integer iArray 
+          
+          Get pbRead_Json_file to bRead_Json_file
+          
+          If (bRead_Json_file) Begin
+            Get phoErrors_Related_Workspace_CJGrid to hoErrors_Related_Workspace_CJGrid
+            
+            If (hoErrors_Related_Workspace_CJGrid > 0) Begin
+              Get RowValue of oArray_CJGridColumn iNewSelectedRow to iArray    
+              
+              Send doFill_with_Data of oErrors_Related_Workspace_CJGrid iArray
+              Send doFill_with_Data of oErrors_Impacted_Files_CJGrid    iArray
+              Send doFill_with_Data of oErrors_Referenced_Files_CJGrid  iArray
+              Send doFill_with_Data of oErrors_Suggestions_CJGrid       iArray
+            End
+          End
+        End_Procedure
+
+        Procedure OnCreate
+          Forward Send OnCreate 
+          
+          Send doFill_with_Data
+        End_Procedure
+    
+      End_Object
+
+      Object oErrors_Related_Workspace_CJGrid is a LA_cCJGrid
+        Set Location to 5 414
+        Set Size to 58 402
+        Set peAnchors to anTopLeftRight
+        Set pbAllowAppendRow to False
+        Set pbAllowDeleteRow to False
+        Set pbAllowInsertRow to False
+        Set pbAutoAppend to False        
+        Set pbAllowColumnRemove to False
+        Set pbAllowColumnReorder to False
+
+        Object oRelated_Workspace_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 333
+          Set psCaption to "Related Workspaces"
+          Set pbEditable to False
+        End_Object
+
+        Procedure doFill_with_Data Integer iArray
+          tLibAnalyzerOutput stLibAnalyzerOutput         
+          String[] saRelatedWorkspaces
+          tDataSourceRow[] staDataSourceRows
+          
+          Boolean bRead_Json_file
+          Integer iArray_Count
+          Integer icCount
+          Integer iIdentical  
+          Integer iArray_Count_Candidates          
+          Integer icCount_Candidates
+          
+          Get pbRead_Json_file to bRead_Json_file
+          
+          If (bRead_Json_file) Begin
+            Get pstLibAnalyzerOutput to stLibAnalyzerOutput            
+            Move stLibAnalyzerOutput.errors[iArray].relatedWorkspaces to saRelatedWorkspaces
+            
+            Move (SizeOfArray (saRelatedWorkspaces)) to iArray_Count
+            
+            For icCount from 0 to (iArray_Count - 1)
+              Move saRelatedWorkspaces[icCount] to staDataSourceRows[icCount].sValue[0]
+            Loop
+          End
+          
+          Send InitializeData staDataSourceRows          
+        End_Procedure
+        
+        Procedure OnCreate
+          Forward Send OnCreate   
+          
+          Set phoErrors_Related_Workspace_CJGrid to Self
+          
+          Send doFill_with_Data 0
+        End_Procedure
+    
+      End_Object
+
+      Object oErrors_Files_Container is a Container3d
+        Set Location to 64 413
+        Set Size to 228 404
+        Set peAnchors to anAll  
+
+        Object oErrors_SplitterContainer is a cSplitterContainer
+          Set pbSplitVertical to False
+          Set piSplitterLocation to 128
+
+          Object oErrors_Impacted_SplitterContainerChild is a cSplitterContainerChild    
+
+            Object oErrors_Impacted_Files_CJGrid is a LA_cCJGrid
+              Set Location to 0 0
+              Set Size to 124 402
+              Set pbAllowAppendRow to False
+              Set pbAllowDeleteRow to False
+              Set pbAllowInsertRow to False
+              Set pbAutoAppend to False        
+              Set pbAllowColumnRemove to False
+              Set pbAllowColumnReorder to False
+      
+              Object oErrors_Impacted_Files_CJGridColumn is a LA_cCJGridColumn
+                Set piWidth to 333
+                Set psCaption to "Impacted Files"
+                Set pbEditable to False
+                Set pbDouble_Click to True
+                Set phpDouble_Click to (RefProc (doOpen_in_Editor_Explorer))
+                
+                Procedure onCall_DoubleClick String sValue
+                  Handle  hpDouble_Click
+                  
+                  Get phpDouble_Click to hpDouble_Click  
+          
+                  If (hpDouble_Click <> 0) Begin
+                    Send hpDouble_Click sValue
+                  End
+                End_Procedure
+        
+              End_Object
+
+              Procedure doFill_with_Data Integer iArray
+                tLibAnalyzerOutput stLibAnalyzerOutput         
+                String[] saImpactedFiles
+                tDataSourceRow[] staDataSourceRows
+                
+                Boolean bRead_Json_file
+                Integer iArray_Count
+                Integer icCount
+                Integer iIdentical  
+                Integer iArray_Count_Candidates          
+                Integer icCount_Candidates
+                
+                Get pbRead_Json_file to bRead_Json_file
+                
+                If (bRead_Json_file) Begin
+                  Get pstLibAnalyzerOutput to stLibAnalyzerOutput            
+                  Move stLibAnalyzerOutput.errors[iArray].impactedFiles to saImpactedFiles
+                  
+                  Move (SizeOfArray (saImpactedFiles)) to iArray_Count
+                  
+                  For icCount from 0 to (iArray_Count - 1)
+                    Move saImpactedFiles[icCount] to staDataSourceRows[icCount].sValue[0]
+                  Loop  
+                  
+                  Set psCaption of oErrors_Impacted_Files_CJGridColumn to ("Impacted Files [" + (String (iArray_Count)) + "]")
+                End
+                
+                Send InitializeData staDataSourceRows          
+              End_Procedure
+              
+              Procedure OnCreate
+                Forward Send OnCreate 
+                
+                Send doFill_with_Data 0
+              End_Procedure
+          
+            End_Object
+
+          End_Object
+
+          Object oErrors_Referenced_SplitterContainerChild is a cSplitterContainerChild
+
+            Object oErrors_Referenced_Files_CJGrid is a LA_cCJGrid
+              Set Location to 0 0 
+              Set Size to 91 402
+              Set pbAllowAppendRow to False
+              Set pbAllowDeleteRow to False
+              Set pbAllowInsertRow to False
+              Set pbAutoAppend to False        
+              Set pbAllowColumnRemove to False
+              Set pbAllowColumnReorder to False
+      
+              Object oErrors_Referenced_Files_CJGridColumn is a LA_cCJGridColumn
+                Set piWidth to 333
+                Set psCaption to "Referenced Files"
+                Set pbEditable to False
+                Set pbDouble_Click to True
+                Set phpDouble_Click to (RefProc (doOpen_in_Editor_Explorer))
+                
+                Procedure onCall_DoubleClick String sValue
+                  Handle  hpDouble_Click
+                  
+                  Get phpDouble_Click to hpDouble_Click  
+          
+                  If (hpDouble_Click <> 0) Begin
+                    Send hpDouble_Click sValue
+                  End
+                End_Procedure
+                
+              End_Object
+              
+              Procedure doFill_with_Data Integer iArray
+                tLibAnalyzerOutput stLibAnalyzerOutput         
+                String[] saReferencedFiles
+                tDataSourceRow[] staDataSourceRows
+                
+                Boolean bRead_Json_file
+                Integer iArray_Count
+                Integer icCount
+                Integer iIdentical  
+                Integer iArray_Count_Candidates          
+                Integer icCount_Candidates
+                
+                Get pbRead_Json_file to bRead_Json_file
+                
+                If (bRead_Json_file) Begin
+                  Get pstLibAnalyzerOutput to stLibAnalyzerOutput            
+                  Move stLibAnalyzerOutput.errors[iArray].referencedFiles to saReferencedFiles
+                  
+                  Move (SizeOfArray (saReferencedFiles)) to iArray_Count
+                  
+                  For icCount from 0 to (iArray_Count - 1)
+                    Move saReferencedFiles[icCount] to staDataSourceRows[icCount].sValue[0]
+                  Loop   
+                  
+                  Set psCaption of oErrors_Referenced_Files_CJGridColumn to ("Referenced Files [" + (String (iArray_Count)) + "]")
+                End
+                
+                Send InitializeData staDataSourceRows          
+              End_Procedure
+              
+              Procedure OnCreate
+                Forward Send OnCreate 
+                
+                Send doFill_with_Data 0
+              End_Procedure
+          
+            End_Object
+
+          End_Object
+
+        End_Object
+        
+      End_Object                                             
+
+      Object oErrors_Suggestions_CJGrid is a LA_cCJGrid
+        Set Location to 295 414
+        Set Size to 96 402
+        Set peAnchors to anBottomLeftRight
+        Set pbAllowAppendRow to False
+        Set pbAllowDeleteRow to False
+        Set pbAllowInsertRow to False
+        Set pbAutoAppend to False        
+        Set pbAllowColumnRemove to False
+        Set pbAllowColumnReorder to False
+
+        Object oErrors_Suggestions_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 333
+          Set psCaption to "Suggestions"
+          Set pbEditable to False
+          Set pbMultiLine to True
+        End_Object
+
+        Procedure doFill_with_Data Integer iArray
+          tLibAnalyzerOutput stLibAnalyzerOutput         
+          String[] saSuggestions
+          tDataSourceRow[] staDataSourceRows
+          
+          Boolean bRead_Json_file
+          Integer iArray_Count
+          Integer icCount
+          Integer iIdentical  
+          Integer iArray_Count_Candidates          
+          Integer icCount_Candidates
+          
+          Get pbRead_Json_file to bRead_Json_file
+          
+          If (bRead_Json_file) Begin
+            Get pstLibAnalyzerOutput to stLibAnalyzerOutput            
+            Move stLibAnalyzerOutput.errors[iArray].suggestions to saSuggestions
+            
+            Move (SizeOfArray (saSuggestions)) to iArray_Count
+            
+            For icCount from 0 to (iArray_Count - 1)
+              Move saSuggestions[icCount] to staDataSourceRows[icCount].sValue[0]
+            Loop
+          End
+
+          Send InitializeData staDataSourceRows         
+        End_Procedure
+        
+        Procedure OnCreate
+          Forward Send OnCreate 
+          
+          Send doFill_with_Data 0
+        End_Procedure
+    
+      End_Object
+      
+    End_Object
+    
+    Object oWarning_TabPage is a TabPage
+      Set Label to 'Warnings'
+
+      Object oWarnings_CJGrid is a LA_cCJGrid
+        Set Location to 5 5
+        Set Size to 386 402
+        Set peAnchors to anTopBottomLeft
+        Set pbAllowAppendRow to False
+        Set pbAllowDeleteRow to False
+        Set pbAllowInsertRow to False
+        Set pbAutoAppend to False        
+        Set pbAllowColumnRemove to False
+        Set pbAllowColumnReorder to False
+
+        Object oDescription_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 333
+          Set psCaption to "Description"
+          Set pbEditable to False
+        End_Object
+
+        Object oWorkspace_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 337
+          Set psCaption to "Workspace"
+          Set pbEditable to False
+        End_Object
+        
+        Object oArray_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 58
+          Set psCaption to "Array"
+          Set pbVisible to False
+        End_Object
+
+        Procedure doFill_with_Data
+          tLibAnalyzerOutput stLibAnalyzerOutput 
+          tLibAnalyzerDependencyIssue[] staLibAnalyzerDependencyIssue  
+          tDataSourceRow[] staDataSourceRows
+          
+          Boolean bRead_Json_file
+          Integer iArray_Count
+          Integer icCount
+          Integer iIdentical  
+          Integer iArray_Count_Candidates          
+          Integer icCount_Candidates
+          
+          Get pbRead_Json_file to bRead_Json_file
+          
+          If (bRead_Json_file) Begin
+            Get pstLibAnalyzerOutput to stLibAnalyzerOutput            
+            Move stLibAnalyzerOutput.warnings to staLibAnalyzerDependencyIssue
+            
+            Move (SizeOfArray (staLibAnalyzerDependencyIssue)) to iArray_Count
+            
+            For icCount from 0 to (iArray_Count - 1)
+              Move staLibAnalyzerDependencyIssue[icCount].description to staDataSourceRows[icCount].sValue[0]
+              Move staLibAnalyzerDependencyIssue[icCount].workspace   to staDataSourceRows[icCount].sValue[1]
+              Move icCount                                            to staDataSourceRows[icCount].sValue[2]
+            Loop
+          End
+          
+          Send InitializeData staDataSourceRows          
+        End_Procedure
+        
+        Procedure OnRowChanged Integer iOldRow Integer iNewSelectedRow  
+          Boolean bRead_Json_file
+          Handle  hoWarnings_Related_Workspace_CJGrid
+          Integer iArray 
+          
+          Get pbRead_Json_file to bRead_Json_file
+          
+          If (bRead_Json_file) Begin
+            Get phoWarnings_Related_Workspace_CJGrid to hoWarnings_Related_Workspace_CJGrid
+            
+            If (hoWarnings_Related_Workspace_CJGrid > 0) Begin
+              Get RowValue of oArray_CJGridColumn iNewSelectedRow to iArray    
+              
+              Send doFill_with_Data of oWarnings_Related_Workspace_CJGrid iArray
+              Send doFill_with_Data of oWarnings_Impacted_Files_CJGrid    iArray
+              Send doFill_with_Data of oWarnings_Referenced_Files_CJGrid  iArray
+              Send doFill_with_Data of oWarnings_Suggestions_CJGrid       iArray
+            End
+          End
+        End_Procedure
+
+        Procedure OnCreate
+          Forward Send OnCreate 
+          
+          Send doFill_with_Data
+        End_Procedure
+    
+      End_Object
+
+      Object oWarnings_Related_Workspace_CJGrid is a LA_cCJGrid
+        Set Location to 5 414
+        Set Size to 58 402
+        Set peAnchors to anTopLeftRight
+        Set pbAllowAppendRow to False
+        Set pbAllowDeleteRow to False
+        Set pbAllowInsertRow to False
+        Set pbAutoAppend to False        
+        Set pbAllowColumnRemove to False
+        Set pbAllowColumnReorder to False
+
+        Object oRelated_Workspace_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 333
+          Set psCaption to "Related Workspaces"
+          Set pbEditable to False
+        End_Object
+
+        Procedure doFill_with_Data Integer iArray
+          tLibAnalyzerOutput stLibAnalyzerOutput         
+          String[] saRelatedWorkspaces
+          tDataSourceRow[] staDataSourceRows
+          
+          Boolean bRead_Json_file
+          Integer iArray_Count
+          Integer icCount
+          Integer iIdentical  
+          Integer iArray_Count_Candidates          
+          Integer icCount_Candidates
+          
+          Get pbRead_Json_file to bRead_Json_file
+          
+          If (bRead_Json_file) Begin
+            Get pstLibAnalyzerOutput to stLibAnalyzerOutput            
+            Move stLibAnalyzerOutput.warnings[iArray].relatedWorkspaces to saRelatedWorkspaces
+            
+            Move (SizeOfArray (saRelatedWorkspaces)) to iArray_Count
+            
+            For icCount from 0 to (iArray_Count - 1)
+              Move saRelatedWorkspaces[icCount] to staDataSourceRows[icCount].sValue[0]
+            Loop
+          End
+
+          Send InitializeData staDataSourceRows          
+        End_Procedure
+        
+        Procedure OnCreate
+          Forward Send OnCreate   
+          
+          Set phoWarnings_Related_Workspace_CJGrid to Self
+          
+          Send doFill_with_Data 0
+        End_Procedure
+    
+      End_Object 
+
+      Object oWarnings_Files_Container is a Container3d
+        Set Location to 64 413
+        Set Size to 228 404
+        Set peAnchors to anAll  
+
+        Object oWarnings_SplitterContainer is a cSplitterContainer
+          Set pbSplitVertical to False
+          Set piSplitterLocation to 128
+
+          Object oWarnings_Impacted_SplitterContainerChild is a cSplitterContainerChild    
+            
+            Object oWarnings_Impacted_Files_CJGrid is a LA_cCJGrid
+              Set Location to 0 0
+              Set Size to 124 402
+              Set pbAllowAppendRow to False
+              Set pbAllowDeleteRow to False
+              Set pbAllowInsertRow to False
+              Set pbAutoAppend to False        
+              Set pbAllowColumnRemove to False
+              Set pbAllowColumnReorder to False
+      
+              Object oWarnings_Impacted_Files_CJGridColumn is a LA_cCJGridColumn
+                Set piWidth to 333
+                Set psCaption to "Impacted Files"
+                Set pbEditable to False
+                Set pbDouble_Click to True
+                Set phpDouble_Click to (RefProc (doOpen_in_Editor_Explorer))
+                
+                Procedure onCall_DoubleClick String sValue  
+                  Handle  hpDouble_Click 
+                  
+                  Get phpDouble_Click to hpDouble_Click  
+          
+                  If (hpDouble_Click <> 0) Begin
+                    Send hpDouble_Click sValue
+                  End
+                End_Procedure
+        
+              End_Object
+
+              Procedure doFill_with_Data Integer iArray
+                tLibAnalyzerOutput stLibAnalyzerOutput         
+                String[] saImpactedFiles
+                tDataSourceRow[] staDataSourceRows
+                
+                Boolean bRead_Json_file
+                Integer iArray_Count
+                Integer icCount
+                Integer iIdentical  
+                Integer iArray_Count_Candidates          
+                Integer icCount_Candidates
+                
+                Get pbRead_Json_file to bRead_Json_file
+                
+                If (bRead_Json_file) Begin
+                  Get pstLibAnalyzerOutput to stLibAnalyzerOutput            
+                  Move stLibAnalyzerOutput.warnings[iArray].impactedFiles to saImpactedFiles
+                  
+                  Move (SizeOfArray (saImpactedFiles)) to iArray_Count
+                  
+                  For icCount from 0 to (iArray_Count - 1)
+                    Move saImpactedFiles[icCount] to staDataSourceRows[icCount].sValue[0]
+                  Loop  
+                  
+                  Set psCaption of oWarnings_Impacted_Files_CJGridColumn to ("Impacted Files [" + (String (iArray_Count)) + "]")                
+                End
+                
+                Send InitializeData staDataSourceRows          
+              End_Procedure
+              
+              Procedure OnCreate
+                Forward Send OnCreate 
+                
+                Send doFill_with_Data 0
+              End_Procedure
+          
+            End_Object
+            
+          End_Object
+
+          Object oWarnings_Referenced_SplitterContainerChild is a cSplitterContainerChild
+
+            Object oWarnings_Referenced_Files_CJGrid is a LA_cCJGrid
+              Set Location to 0 0
+              Set Size to 91 402
+              Set pbAllowAppendRow to False
+              Set pbAllowDeleteRow to False
+              Set pbAllowInsertRow to False
+              Set pbAutoAppend to False        
+              Set pbAllowColumnRemove to False
+              Set pbAllowColumnReorder to False
+      
+              Object oWarnings_Referenced_Files_CJGridColumn is a LA_cCJGridColumn
+                Set piWidth to 333
+                Set psCaption to "Referenced Files"
+                Set pbEditable to False
+                Set pbDouble_Click to True
+                Set phpDouble_Click to (RefProc (doOpen_in_Editor_Explorer))
+                
+                Procedure onCall_DoubleClick String sValue
+                  Handle  hpDouble_Click
+                  
+                  Get phpDouble_Click to hpDouble_Click  
+          
+                  If (hpDouble_Click <> 0) Begin
+                    Send hpDouble_Click sValue
+                  End
+                End_Procedure
+        
+              End_Object
+              
+              Procedure doFill_with_Data Integer iArray
+                tLibAnalyzerOutput stLibAnalyzerOutput         
+                String[] saReferencedFiles
+                tDataSourceRow[] staDataSourceRows
+                
+                Boolean bRead_Json_file
+                Integer iArray_Count
+                Integer icCount
+                Integer iIdentical  
+                Integer iArray_Count_Candidates          
+                Integer icCount_Candidates
+                
+                Get pbRead_Json_file to bRead_Json_file
+                
+                If (bRead_Json_file) Begin
+                  Get pstLibAnalyzerOutput to stLibAnalyzerOutput            
+                  Move stLibAnalyzerOutput.warnings[iArray].referencedFiles to saReferencedFiles
+                  
+                  Move (SizeOfArray (saReferencedFiles)) to iArray_Count
+                  
+                  For icCount from 0 to (iArray_Count - 1)
+                    Move saReferencedFiles[icCount] to staDataSourceRows[icCount].sValue[0]
+                  Loop   
+                  
+                  Set psCaption of oWarnings_Referenced_Files_CJGridColumn to ("Referenced Files [" + (String (iArray_Count)) + "]")
+                End
+      
+                Send InitializeData staDataSourceRows          
+              End_Procedure
+              
+              Procedure OnCreate
+                Forward Send OnCreate 
+                
+                Send doFill_with_Data 0
+              End_Procedure
+          
+            End_Object       
+
+          End_Object
+
+        End_Object
+        
+      End_Object
+      
+      Object oWarnings_Suggestions_CJGrid is a LA_cCJGrid
+        Set Location to 295 414
+        Set Size to 96 402
+        Set peAnchors to anBottomLeftRight
+        Set pbAllowAppendRow to False
+        Set pbAllowDeleteRow to False
+        Set pbAllowInsertRow to False
+        Set pbAutoAppend to False        
+        Set pbAllowColumnRemove to False
+        Set pbAllowColumnReorder to False
+
+        Object oWarnings_Suggestions_CJGridColumn is a LA_cCJGridColumn
+          Set piWidth to 333
+          Set psCaption to "Suggestions"
+          Set pbEditable to False
+          Set pbMultiLine to True
+        End_Object
+
+        Procedure doFill_with_Data Integer iArray
+          tLibAnalyzerOutput stLibAnalyzerOutput         
+          String[] saSuggestions
+          tDataSourceRow[] staDataSourceRows
+          
+          Boolean bRead_Json_file
+          Integer iArray_Count
+          Integer icCount
+          Integer iIdentical  
+          Integer iArray_Count_Candidates          
+          Integer icCount_Candidates
+          
+          Get pbRead_Json_file to bRead_Json_file
+          
+          If (bRead_Json_file) Begin
+            Get pstLibAnalyzerOutput to stLibAnalyzerOutput            
+            Move stLibAnalyzerOutput.warnings[iArray].suggestions to saSuggestions
+            
+            Move (SizeOfArray (saSuggestions)) to iArray_Count
+            
+            For icCount from 0 to (iArray_Count - 1)
+              Move saSuggestions[icCount] to staDataSourceRows[icCount].sValue[0]
+            Loop
+          End
+
+          Send InitializeData staDataSourceRows         
+        End_Procedure
+        
+        Procedure OnCreate
+          Forward Send OnCreate 
+          
+          Send doFill_with_Data 0
+        End_Procedure
+    
+      End_Object
+
+    End_Object
+    
+  End_Object       
+  
+  Object oClose_Button is a LA_cButton
+    Set Location to 485 395
+    Set Label to 'Close'
+    Set peAnchors to anBottomRight
+  
+    //
+    // PHvW 30/08/2026 Lets Save the last settings
+    //
+    Procedure OnClick   
+      tSettings stSettings                   
+      
+      Handle  hoObject  
+      
+      Get pstSettings of ghoApplication to stSettings
+      
+      Get Create (RefClass (cSettings_Read_Write)) to hoObject
+      Send doWrite_Settings of hoObject "Settings.json" stSettings
+      Set pstSettings of ghoApplication to stSettings
+      Send Destroy of hoObject      
+      
+      Abort
+    End_Procedure
+  
+  End_Object
+
+  Procedure doFill_with_the_JSON
+    Send OnCreateTree of oDependency_Tree
+  End_Procedure        
+  
+  Procedure doJSON_Parse                      
+    tLibAnalyzerOutput stLibAnalyzerOutput
+    
+    String  sPathFIle
+    
+    Get Value of oJSON_Output_File_Form to sPathFIle
+    Get giveLibAnalyzerOutput sPathFIle to stLibAnalyzerOutput 
+    
+    Set pstLibAnalyzerOutput to stLibAnalyzerOutput
+    Set pbRead_Json_file     to True
+    
+    Send doFill_with_the_JSON    
+  End_Procedure   
+  
+  On_Key Key_Ctrl+Key_J Send doJSON_Parse  
+  
+  Procedure Activating
+    tSettings stSettings
+    
+    Forward Send Activating
+    
+    Get pstSettings of ghoApplication to stSettings  
+    
+    Set Value of oWorkspace_Form        to stSettings.sLast_Workspace
+    Set Value of oJSON_Output_File_Form to stSettings.sLast_Json_File
+  End_Procedure
+
+End_Object

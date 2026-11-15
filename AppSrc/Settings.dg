@@ -1,0 +1,184 @@
+Use LA_cModalPanel.pkg  
+Use LA_cButton.pkg       
+Use LA_cLineControl.pkg  
+Use LA_cCheckbox.pkg
+Use LA_cTextBox.pkg
+Use dfLine.pkg
+Use Windows.pkg    
+Use cFileDialog_Form.pkg 
+
+Object oSettings is a LA_cModalPanel
+  Set Size to 153 521
+  Set piMinSize to 108 491
+  Set Locate_Mode to Center_On_Parent   
+  Set Label to "Settings"
+
+  Object oAnalyzer_Form is a cFileDialog_Form
+    Set Location to 10 100
+    Set Size to 12 414
+    Set Label to "Lib Analyzer:"  
+    Set Filter_String to "Executable Files|*.exe|All Files|*.*"
+    Set psPlaceHolder to "Enter the location to the dflibanalyzer.exe"
+  End_Object  
+  
+  Object oAdditional_Extensions_Form is a LA_cForm
+    Set Location to 25 100
+    Set Size to 12 309
+    Set Label to "Additional Extensions to scan:"  
+    Set Value to "utl,nui"                                        
+    Set psPlaceHolder to "Add additionnal extensions, just the extensions seperated by a comma."
+  End_Object  
+
+  Object oExample is a LA_cTextBox
+    Set Location to 24 417
+    Set Size to 10 55
+    Set Label to 'Example: nui,utl"'
+  End_Object
+
+  Object oScan_Images_CheckBox is a LA_cCheckBox
+    Set Location to 42 100
+    Set Size to 10 50
+    Set Label to 'Scan for imaages'
+  End_Object
+
+  Object oImages_Extensions_Form is a LA_cForm
+    Set Location to 55 100
+    Set Size to 12 309
+    Set Label to "Images Extensions to scan:"  
+    Set Value to "ico,bmp"
+    Set psPlaceHolder to "Add additionnal extensions, just the extensions seperated by a comma."
+  End_Object  
+
+  Object oExample is a LA_cTextBox
+    Set Location to 55 418
+    Set Size to 10 61
+    Set Label to 'Example: ico,bmp"'
+  End_Object
+
+  Object oCompare_Tool_Form is a cFileDialog_Form
+    Set Location to 70 100
+    Set Size to 12 414
+    Set Label to "Compare Tool:"
+    Set Filter_String to "Executable Files|*.exe|All Files|*.*"       
+    Set psPlaceHolder to "Enter the location to a merge tool, should work for beyond compare and Araxis"
+  End_Object           
+
+  Object oPro_Version_CheckBox is a LA_cCheckBox
+    Set Location to 85 100
+    Set Size to 10 50
+    Set Label to 'Pro version'
+  
+    Procedure OnChange
+      Boolean bChecked
+    
+      Get Checked_State to bChecked
+      
+    End_Procedure
+  
+  End_Object
+
+  Object oEditor_or_Explorer is a LA_cComboForm
+    Set Location to 100 100
+    Set Size to 12 196
+    Set Label to "Select:"
+    
+    Procedure Combo_Fill_List
+      Send Combo_Add_Item "Open file in Selected Editor"
+      Send Combo_Add_Item "Open file in the windows Explorer"
+    End_Procedure
+    
+    Procedure onChange
+      String  sValue
+      
+      Get Value to sValue
+      
+      Set Enabled_State of oEditor_Form to (sValue = "Open file in Selected Editor") 
+    End_Procedure
+
+  End_Object           
+
+  Object oEditor_Form is a cFileDialog_Form
+    Set Location to 115 100
+    Set Size to 12 414
+    Set Label to "Editor:"
+    Set Filter_String to "Executable Files|*.exe|All Files|*.*"       
+    Set psPlaceHolder to "Enter a link to your editor you want to use for a single file"
+  End_Object           
+  
+  Object oLineControl is a LA_cLineControl
+    Set Location to 130 6
+    Set Size to 2 509
+  End_Object
+
+  Object oSave is a LA_cButton
+    Set Location to 135 408
+    Set Label to 'Save && Close'
+  
+    Procedure OnClick   
+      tSettings stSettings                   
+      
+      Handle  hoObject  
+      
+      Get pstSettings   of ghoApplication              to stSettings
+      
+      Get Value         of oAnalyzer_Form              to stSettings.sLib_Analyzer 
+      Get Value         of oAdditional_Extensions_Form to stSettings.sAdditional_Extensions
+      Get Checked_State of oScan_Images_CheckBox       to stSettings.bScan_Images
+      Get Value         of oImages_Extensions_Form     to stSettings.sBitmap_Extensions
+      Get Value         of oCompare_Tool_Form          to stSettings.sCompare_Tool
+      Get Checked_State of oPro_Version_CheckBox       to stSettings.bPro_edition    
+      Get Value         of oEditor_or_Explorer         to stSettings.sEditor_or_Explorer
+      Get value         of oEditor_Form                to stSettings.sEditor_Location
+      
+      Move (Trim (stSettings.sLib_Analyzer))           to stSettings.sLib_Analyzer
+      Move (Trim (stSettings.sAdditional_Extensions))  to stSettings.sAdditional_Extensions
+      Move (Trim (stSettings.sBitmap_Extensions))      to stSettings.sBitmap_Extensions
+      Move (Trim (stSettings.sCompare_Tool))           to stSettings.sCompare_Tool         
+      Move (Trim (stSettings.sEditor_or_Explorer))     to stSettings.sEditor_or_Explorer
+      Move (Trim (stSettings.sEditor_Location))        to stSettings.sEditor_Location         
+      
+      Get Create (RefClass (cSettings_Read_Write)) to hoObject
+      Send doWrite_Settings of hoObject "Settings.json" stSettings
+      Set pstSettings of ghoApplication to stSettings
+      Send Destroy of hoObject      
+      
+      Send Close_Panel
+    End_Procedure
+  
+  End_Object
+
+  Object oCancel is a LA_cButton
+    Set Location to 135 463
+    Set Label to 'Cancel'
+    Set Default_State to True
+  
+    Procedure OnClick   
+      Send Close_Panel
+    End_Procedure
+  
+  End_Object 
+
+  On_Key kCancel Send Close_Panel   
+  
+  Procedure Popup
+    tSettings stSettings
+    
+    Get pstSettings of ghoApplication to stSettings
+    
+    Set Value         of oAnalyzer_Form              to (Trim (stSettings.sLib_Analyzer))
+    Set Value         of oAdditional_Extensions_Form to (Trim (stSettings.sAdditional_Extensions))
+    Set Checked_State of oScan_Images_CheckBox       to stSettings.bScan_Images
+    Set Value         of oImages_Extensions_Form     to (Trim (stSettings.sBitmap_Extensions))
+    Set Value         of oCompare_Tool_Form          to (Trim (stSettings.sCompare_Tool))
+    Set Checked_State of oPro_Version_CheckBox       to stSettings.bPro_edition         
+    Set Value         of oEditor_or_Explorer         to (Trim (stSettings.sEditor_or_Explorer))
+    Set Value         of oEditor_Form                to (Trim (stSettings.sEditor_Location))
+    
+    Forward Send Popup
+  End_Procedure
+
+End_Object
+
+Procedure doStart_Settings 
+  Send Popup of oSettings
+End_Procedure

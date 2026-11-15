@@ -1,0 +1,132 @@
+﻿Use DFAllEnt.pkg
+Use cCJStandardCommandBarSystem.pkg
+
+Use LA_cHtmlHelp.pkg
+
+Object oHtmlHelp is a LA_cHtmlHelp
+End_Object
+
+Use LA_cApplication.pkg      
+Use LA_cConnection.pkg
+Use cSettings_Read_Write.pkg
+
+Object oApplication is a LA_cApplication
+  Property tSettings pstSettings
+  
+  Set peHelpType to htHtmlHelp
+
+  Object oConnection is a LA_cConnection
+    Use LoginEncryption.pkg
+    Use DatabaseLoginDialog.dg
+  End_Object   
+  
+  Procedure Set psLast_Workspace String sValue
+    tSettings stSettings
+    
+    Get pstSettings to stSettings
+    Move (Trim (sValue)) to stSettings.sLast_Workspace
+    Set pstSettings to stSettings
+  End_Procedure
+  
+  Function psLast_Workspace Returns String
+    tSettings stSettings
+    
+    Get pstSettings to stSettings
+    
+    Function_Return stSettings.sLast_Workspace
+  End_Function
+
+  Procedure Set pbLast_Verbose Boolean bStatus
+    tSettings stSettings
+    
+    Get pstSettings to stSettings
+    Move bStatus to stSettings.bLast_Verbose
+    Set pstSettings to stSettings
+  End_Procedure
+
+  Function pbLast_Verbose Returns Boolean      
+    tSettings stSettings
+    
+    Get pstSettings to stSettings
+    
+    Function_Return stSettings.bLast_Verbose
+  End_Function  
+
+  Procedure Set pbLast_Recursive Boolean bStatus
+    tSettings stSettings
+    
+    Get pstSettings to stSettings
+    Move bStatus to stSettings.bLast_Recursive
+    Set pstSettings to stSettings
+  End_Procedure
+
+  Function pbLast_Recursive Returns Boolean     
+    tSettings stSettings
+    
+    Get pstSettings to stSettings
+    
+    Function_Return stSettings.bLast_Recursive
+  End_Function  
+
+  Procedure Set psLast_Json_File String sValue
+    tSettings stSettings
+    
+    Get pstSettings to stSettings
+    Move (Trim (sValue)) to stSettings.sLast_Json_File
+    Set pstSettings to stSettings
+  End_Procedure
+  
+  Function psLast_Json_File Returns String
+    tSettings stSettings
+    
+    Get pstSettings to stSettings
+    
+    Function_Return stSettings.sLast_Json_File
+  End_Function  
+  
+  Procedure Set pbPro_edition Boolean bState
+    tSettings stSettings
+    
+    Get pstSettings to stSettings
+    Move bState to stSettings.bPro_edition
+    Set pstSettings to stSettings
+  End_Procedure                   
+  
+  Function pbPro_Edition Returns Boolean
+    tSettings stSettings
+    
+    Get pstSettings to stSettings
+    
+    Function_Return stSettings.bPro_edition
+  End_Function
+  
+End_Object     
+
+Use cToolTipController.pkg
+
+Object oToolTip is a cToolTipController
+  Set pbBalloonStyle to True 
+  Set piIcon to TTI_INFO_LARGE 
+  Set psTitle to "Tip"    
+  Move Self to ghoToolTipController
+End_Object
+
+Procedure doRead_Settings            
+  tSettings stSettings
+  
+  Handle  hoObject
+  
+  Get Create (RefClass (cSettings_Read_Write)) to hoObject
+  Get doRead_Settings of hoObject "Settings.json" to stSettings
+  Set pstSettings of ghoApplication to stSettings
+  Send Destroy of hoObject
+End_Procedure
+
+Send doRead_Settings
+
+Use DF_Library_Analyze.dg
+
+Start_UI (oDF_Library_Analyze (Desktop))
+
+Abort
+

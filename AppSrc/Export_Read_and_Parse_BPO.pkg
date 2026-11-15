@@ -1,0 +1,317 @@
+﻿Use LA_cBusinessProcess.pkg
+
+Struct tWorkspace_PathFile
+  String  sWorkspace
+  String  sPath_File
+End_Struct
+
+Struct tFile_WorkSpace
+  String  sFilename
+  Boolean bIdentical
+  tWorkspace_PathFile[] staWorkspace_PathFile
+End_Struct
+
+Struct tMissing_Ambiguous
+  String  sWorkspace
+  String  sComments
+End_Struct
+
+Global_Variable String c_CR_LF
+
+Move ((Character (13))  + (Character (11))) to c_CR_LF
+
+Class cExport_Read_and_Parse_BPO is a LA_cBusinessProcess
+  
+  Procedure Construct_Object
+    Forward Send Construct_Object
+    
+    Property String[]             psaTree
+    Property String[]             psaFiles 
+    Property String[]             psaMissing_Ambiguous   
+    Property tFile_WorkSpace[]    pstaFile_Workspace     
+    Property tMissing_Ambiguous[] pstaMissing_Ambiguous
+    
+    Property Handle  phChannel   
+    Property String  psImportFileName    
+  End_Procedure      
+  
+  Function doOpen_File Returns Boolean
+    Handle  hChannel   
+    String sImportFileName 
+    
+    Get Seq_New_Channel to hChannel
+    
+    If (hChannel  = DF_SEQ_CHANNEL_NOT_AVAILABLE) Begin
+      Send Info_Box "No Channel Available for Process" "Error"
+      
+      Function_Return False
+    End                    
+    
+    Get psImportFileName to sImportFileName
+    Direct_Input channel hChannel sImportFileName  
+    
+    If (SeqEof) Begin
+       Send UserError ("Import file: " + sImportFileName + " not found")
+       
+       Function_Return False
+    End
+      
+    Set phChannel to hChannel
+    
+    Function_Return True  
+  End_Function
+  
+  Procedure doClose_File
+    Handle  hChannel            
+    String  sImportFileName
+    
+    Get phChannel        to hChannel
+    Get psImportFileName to sImportFileName
+    
+    Close_Input channel hChannel sImportFileName
+  End_Procedure          
+  
+  Procedure doRead_Until_Needed String sNeeded
+    Handle  hChannel
+    Boolean bDone
+    String  sLine     
+    Boolean bFound_Scanning_Line
+    
+    Get phChannel to hChannel  
+    
+    Move False to bDone
+    
+    Repeat
+      Readln channel hChannel sLine
+      If ((Pos (sNeeded, sLine)) > 0) Begin
+        Move True to bFound_Scanning_Line
+      End
+      
+      If ((bFound_Scanning_Line) and ((Pos (sNeeded, sLine)) = 0)) Begin
+        Move True to bDone
+      End
+    Until (bDone)
+  End_Procedure
+  
+  Procedure doRead_Tree                 
+    String[] saLine
+    
+    Handle  hChannel            
+    Boolean bDone
+    String  sLine    
+    Boolean bFound_Scanning_Line
+    
+    Send doRead_Until_Needed "Scanning source files for workspace:"
+    
+    Get phChannel to hChannel 
+    
+    Move False to bDone
+    
+    Repeat 
+      Readln channel hChannel sLine
+      
+      If ((Trim (sLine)) = "") Begin
+        Move True to bDone
+      End                 
+      Else Begin
+        Move sLine to saLine[-1]
+      End
+    Until (bDone)  
+    
+    Set psaTree to saLine
+  End_Procedure
+  
+  Procedure doRead_Files                       
+    String[] saLine
+    
+    Handle  hChannel
+    Boolean bDone  
+    String  sLine
+    
+    Send doRead_Until_Needed "File / Workspace"
+    
+    Get phChannel to hChannel 
+
+    Move False to bDone
+    
+    Repeat 
+      Readln channel hChannel sLine
+      
+      If ((Pos ("│ ", sLine)) > 0) Begin
+        Move sLine to saLine[-1] 
+      End        
+      If ((Trim (sLine)) = "") Begin
+        Move True to bDone
+      End
+    Until (bDone)
+    
+    Set psaFiles to saLine
+  End_Procedure    
+
+  Procedure doRead_Missing_Ambiguous
+    String[] saLine
+    
+    Handle  hChannel
+    String  sLine
+
+    Get phChannel to hChannel 
+
+    Readln channel hChannel sLine
+    Readln channel hChannel sLine
+
+    Repeat        
+      Readln channel hChannel sLine
+      Move sLine to saLine[-1]
+    Until (SeqEof)
+    
+    Set psaMissing_Ambiguous to saLine
+  End_Procedure
+
+  Procedure doParse_Files
+    tFile_WorkSpace[]     staFile_WorkSpace
+    tFile_WorkSpace       stFile_WorkSpace
+    tFile_WorkSpace       stFile_WorkSpace_Blank    
+    
+    tWorkspace_PathFile[] staWorkspace_PathFile
+    tWorkspace_PathFile   stWorkspace_PathFile
+    tWorkspace_PathFile   stWorkspace_PathFile_Blank
+    
+    String[] saFiles       
+    
+    Integer iArray_Count
+    Integer icCount           
+    String  sLine              
+    String  sSource_File
+    Boolean bIdentical  
+    Integer iPosition
+    String  sWorkspace
+    String  sPath_File
+    
+    Get psaFiles to saFiles
+    Move (SizeOfArray (saFiles)) to iArray_Count
+    
+    For icCount from 0 to (iArray_Count - 1)
+      Move saFiles[icCount] to sLine 
+      
+      If (((Pos ("┆ Yes", sLine)) > 0) or ((Pos ("┆ No", sLine)) > 0)) Begin
+        If (stFile_WorkSpace.sFilename <> "") Begin
+          Move stFile_WorkSpace       to staFile_WorkSpace[-1]
+          Move stFile_WorkSpace_Blank to stFile_WorkSpace
+        End
+
+        Move (Replaces ("│",             sLine, "")) to sLine               
+        
+        If ((Pos ("┆ Yes", sLine)) > 0) Begin
+          Move (Replaces ("┆ Yes       ┆", sLine, "")) to sLine 
+          Move True to bIdentical
+        End           
+        Else Begin
+          Move (Replaces ("┆ No        ┆", sLine, "")) to sLine 
+          Move False to bIdentical
+        End
+        
+        Move (Trim (sLine)) to sSource_File     
+        
+        Move sSource_File to stFile_WorkSpace.sFilename
+        Move bIdentical   to stFile_WorkSpace.bIdentical
+      End
+      Else If ((Pos ("┆           ┆", sLine)) > 0) Begin
+        Move (Replace  ("┆           ┆", sLine, "~")) to sLine
+        Move (Replaces ("│",             sLine, ""))  to sLine
+        
+        Move (Trim (sLine))                            to sLine
+        Move (Pos ("~", sLine))                        to iPosition
+        Move (Left (sLine, (iPosition - 1)))           to sWorkspace
+        Move (Replace ((sWorkspace + "~"), sLine, "")) to sLine 
+        Move (Trim (sWorkspace))                       to sWorkspace
+        Move (Trim (sLine))                            to sPath_File
+        
+        Move stWorkspace_PathFile_Blank to stWorkspace_PathFile
+        Move sWorkspace                 to stWorkspace_PathFile.sWorkspace
+        Move sPath_File                 to stWorkspace_PathFile.sPath_File
+        
+        Move stWorkspace_PathFile to stFile_WorkSpace.staWorkspace_PathFile[-1]
+      End  
+    Loop
+    
+    Set pstaFile_Workspace to staFile_WorkSpace
+  End_Procedure
+  
+  Procedure doParse_Missing_Ambiguous
+    tMissing_Ambiguous[] staMissing_Ambiguous
+    tMissing_Ambiguous   stMissing_Ambiguous
+    tMissing_Ambiguous   stMissing_Ambiguous_Blank
+    
+    String[] saLine                
+    
+    String sLine
+    
+    Integer iArray_Count
+    Integer icCount
+    Integer icCounter
+    Boolean bWorking
+    
+    Get psaMissing_Ambiguous to saLine
+    
+    Move (SizeOfArray (saLine)) to iArray_Count
+    Move False to bWorking
+    
+    For icCount from 0 to (iArray_Count - 1)           
+      Move saLine[icCount] to sLine
+      
+      If ((Pos ("└──", sLine)) > 0) Begin
+        Move stMissing_Ambiguous_Blank to stMissing_Ambiguous
+        
+        Move ((Trim (saLine[icCount - 1])) + c_CR_LF + sLine) to stMissing_Ambiguous.sWorkspace
+        Move True to bWorking   
+        Increment icCount
+      End
+      Else Begin             
+        If (bWorking) Begin
+          If ((Trim (sLine)) <> "") Begin
+            If ((Trim (stMissing_Ambiguous.sComments)) <> "") Begin
+              Move (stMissing_Ambiguous.sComments + c_CR_LF + sLine) to stMissing_Ambiguous.sComments
+            End                                     
+            Else Begin
+              Move sLine to stMissing_Ambiguous.sComments
+            End
+          End
+          Else Begin
+            Move stMissing_Ambiguous to staMissing_Ambiguous[-1]
+            Move False to bWorking
+          End
+        End
+        Else Begin
+          //
+          // PHvW 13/08/2026 do nothing
+          //
+        End
+      End
+    Loop
+    
+    Set pstaMissing_Ambiguous to staMissing_Ambiguous
+  End_Procedure
+  
+  Procedure onProcess                      
+    Boolean bFile_Open
+    
+    //
+    // PHvW 13/08/2026 Read all the stuff in
+    //
+    Get doOpen_File to bFile_Open
+    
+    Send doRead_Tree
+    Send doRead_Files  
+    Send doRead_Missing_Ambiguous   
+    
+    Send doClose_File
+    
+    //
+    // PHvW 13/08/2026 Parse the different parts
+    //
+    Send doParse_Files                          
+    Send doParse_Missing_Ambiguous
+  End_Procedure 
+  
+  
+End_Class

@@ -1,0 +1,94 @@
+Use cCJGrid.pkg
+
+Class LA_cCJGrid is a cCJGrid
+    
+  Procedure Construct_Object
+    Forward Send Construct_Object
+
+    //
+    // PHvW 23/08/2026 A bit nice look and feel and working settings
+    //
+    Set pbEditOnClick          to True
+    Set pbEditOnKeyNavigation  to True    
+    Set peAnchors              to anAll  
+    Set peVisualTheme          to xtpGridThemeOffice2003
+    Set piHighlightBackColor   to cl3dLight
+    Set piHighlightForeColor   to clWindowText    
+    Set piSelectedRowForeColor to clWindowText
+    Set piSelectedRowBackColor to cl3dLight
+    Set pbSelectionEnable      to True    
+  End_Procedure
+
+  Procedure End_Construct_Object
+    Forward Send End_Construct_Object
+
+  End_Procedure
+  
+  //
+  // PHvW 23/08/2026 Why code multiple line all the time......
+  //
+  Function pstaDataSourceRows Returns tDataSourceRow[] 
+    tDataSourceRow[] stDataSourceRows
+    
+    Handle  hoDataSource
+    
+    Get phoDataSource to hoDataSource
+    Get pDataSource of hoDataSource to stDataSourceRows
+    
+    Function_Return stDataSourceRows
+  End_Function 
+  
+  //
+  // PHvW 01/09/2026 Just to make it simpel.
+  //
+  Function piSelectedRow Returns Integer
+    Handle  hoDataSource            
+    Integer iRow
+    
+    Get phoDataSource to hoDataSource
+    Get SelectedRow of hoDataSource to iRow
+    
+    Function_Return iRow
+  End_Function
+  
+  //
+  // PHvW 01/09/2026 Two options can go to the clipboard or do a call
+  //
+  Procedure OnRowDoubleClick Integer iRow Integer iCol 
+    Handle[] hoColumnObjects 
+    
+    Handle  hoColumn   
+    Boolean bDouble_Click 
+    Boolean bDouble_Click_Clipboard
+    Handle  hChannel
+    String  sValue                         
+    Handle  hpDouble_Click
+    
+    Get phoColumnObjects to hoColumnObjects
+    Move hoColumnObjects[iCol] to hoColumn
+    
+    Get pbDouble_Click of hoColumn to bDouble_Click
+    
+    If (bDouble_Click) Begin
+      Get pbDouble_Click_Clipboard of hoColumn to bDouble_Click_Clipboard
+      If (bDouble_Click_Clipboard) Begin
+        Get Value to sValue
+
+        Move (Seq_New_Channel()) to hChannel
+    
+        If (hChannel <> DF_SEQ_CHANNEL_NOT_AVAILABLE) Begin
+          Direct_Output channel hChannel "clipboard:"
+          Write channel hChannel sValue
+          Close_Output channel hChannel
+          Send Seq_Release_Channel hChannel
+        End                             
+      End
+      Else Begin
+        Get Value to sValue
+
+        Send onCall_DoubleClick of hoColumn sValue
+      End
+    End
+  End_Procedure   
+
+End_Class

@@ -1,0 +1,297 @@
+Use LA_cForm.pkg
+
+Class cFileDialog_Form is a LA_cForm
+  
+  Procedure construct_object
+    Forward Send construct_object
+
+    Set prompt_button_mode to True
+
+    { Visibility=Private }
+    Property Integer phoFileDialog        0
+    { Category="LA-Framework" }                                  
+    { PropertyType=Boolean }
+    Property Integer pbWithPathName       True
+
+    Object FileDialog is an OpenDialog
+      Delegate Set phoFileDialog to Self
+
+      Set Filter_String   to "Text Files|*.txt|All Files|*.*"
+      Set File_Title      to ""
+      Set Dialog_Caption  to "Select a file" 
+
+    End_Object 
+
+  End_Procedure 
+
+  Procedure End_Construct_Object
+    Forward Send End_Construct_Object
+
+  End_Procedure
+
+  { MethodType=Property }
+  { Category="LA-Framework" }
+  { InitialValue="Text Files|*.txt|All Files|*.*" }
+  Procedure Set Filter_String String sValue
+    Set Filter_String of (phoFileDialog (Self)) to sValue
+  End_Procedure
+
+  Function Filter_String Returns String
+    String sValue
+
+    Get Filter_String of (phoFileDialog (Self)) to sValue
+
+    Function_Return sValue
+  End_Function
+
+  { MethodType=Property }
+  { Category="LA-Framework" }
+  Procedure Set Initial_Folder String sValue
+    Set Initial_Folder of (phoFileDialog (Self)) to sValue
+  End_Procedure
+
+  Function Initial_Folder Returns String
+    String sValue
+
+    Get Initial_Folder of (phoFileDialog (Self)) to sValue
+
+    Function_Return sValue
+  End_Function
+
+  { MethodType=Property }
+  { Category="LA-Framework" }
+  Procedure Set File_Name String sValue
+    Set File_Name of (phoFileDialog (Self)) to sValue
+  End_Procedure
+
+  Function File_Name Returns String
+    String sValue
+
+    Get File_Name of (phoFileDialog (Self)) to sValue
+
+    Function_Return sValue
+  End_Function
+
+  { MethodType=Property }
+  { Category="LA-Framework" }
+  Procedure Set File_Title String sValue
+    Set File_Title of (phoFileDialog (Self)) to sValue
+  End_Procedure
+
+  Function File_Title Returns String
+    String sValue
+
+    Get File_Title of (phoFileDialog (Self)) to sValue
+
+    Function_Return sValue
+  End_Function
+   
+  { MethodType=Property }
+  { Category="LA-Framework" }
+  { InitialValue="Select a file" }
+  Procedure Set Dialog_Caption String sValue
+    Set Dialog_Caption of (phoFileDialog (Self)) to sValue
+  End_Procedure
+
+  Function Dialog_Caption Returns String
+    String sValue
+
+    Get Dialog_Caption of (phoFileDialog (Self)) to sValue
+
+    Function_Return sValue
+  End_Function
+
+  { MethodType=Property }
+  { Category="LA-Framework" }
+  { InitialValue=0 }
+  Procedure Set Filter_Index Integer iValue
+    Set Filter_Index of (phoFileDialog (Self)) to iValue
+  End_Procedure
+
+  Function Filter_Index Returns Integer
+    Integer iValue
+
+    Get Filter_Index of (phoFileDialog (Self)) to iValue
+
+    Function_Return iValue
+  End_Function
+
+  { MethodType=Property }
+  { Category="LA-Framework" }
+  { InitialValue=False }
+  { PropertyType=Boolean }
+  Procedure Set HideReadOnly_State Integer iValue
+    Set HideReadOnly_State of (phoFileDialog (Self)) to iValue
+  End_Procedure
+
+  Function HideReadOnly_State Returns Integer
+    Integer iValue
+
+    Get HideReadOnly_State of (phoFileDialog (Self)) to iValue
+
+    Function_Return iValue
+  End_Function
+
+  { MethodType=Property }
+  { Category="LA-Framework" }
+  { InitialValue=True }   
+  { PropertyType=Boolean }
+  Procedure Set TickReadOnly_State Integer iValue
+    Set TickReadOnly_State of (phoFileDialog (Self)) to iValue
+  End_Procedure
+
+  Function TickReadOnly_State Returns Integer
+    Integer iValue
+
+    Get TickReadOnly_State of (phoFileDialog (Self)) to iValue
+
+    Function_Return iValue
+  End_Function
+
+  { MethodType=Property }
+  { Category="LA-Framework" }                              
+  { InitialValue=True }   
+  { PropertyType=Boolean }
+  Procedure Set AllowReadOnly_State Integer iValue
+    Set AllowReadOnly_State of (phoFileDialog (Self)) to iValue
+  End_Procedure
+
+  Function AllowReadOnly_State Returns Integer
+    Integer iValue
+
+    Get AllowReadOnly_State of (phoFileDialog (Self)) to iValue
+
+    Function_Return iValue
+  End_Function
+
+  { MethodType=Property }
+  { Category="LA-Framework" }  
+  { InitialValue=True }   
+  { PropertyType=Boolean }
+  Procedure Set FileMustExist_State Integer iValue
+    Set FileMustExist_State of (phoFileDialog (Self)) to iValue
+  End_Procedure
+
+  Function FileMustExist_State Returns Integer
+    Integer iValue
+
+    Get FileMustExist_State of (phoFileDialog (Self)) to iValue
+
+    Function_Return iValue
+  End_Function
+
+  { MethodType=Property }
+  { Category="LA-Framework" }  
+  { InitialValue=True }   
+  { PropertyType=Boolean }
+  Procedure Set PathMustExist_State Integer iValue
+    Set PathMustExist_State of (phoFileDialog (Self)) to iValue
+  End_Procedure
+
+  Function PathMustExist_State Returns Integer
+    Integer iValue
+
+    Get PathMustExist_State of (phoFileDialog (Self)) to iValue
+
+    Function_Return iValue
+  End_Function
+
+  { MethodType=Property }
+  { Category="LA-Framework" }  
+  { InitialValue=True }   
+  { PropertyType=Boolean }
+  Procedure Set CreatePrompt_State Integer iValue
+    Set CreatePrompt_State of (phoFileDialog (Self)) to iValue
+  End_Procedure
+
+  Function CreatePrompt_State Returns Integer
+    Integer iValue
+
+    Get CreatePrompt_State of (phoFileDialog (Self)) to iValue
+
+    Function_Return iValue
+  End_Function
+
+  { MethodType=Property }
+  { Category="LA-Framework" }  
+  { InitialValue=True }   
+  { PropertyType=Boolean }
+  Procedure Set ShowFileTitle_State Integer iValue
+    Set ShowFileTitle_State of (phoFileDialog (Self)) to iValue
+  End_Procedure
+
+  Function ShowFileTitle_State Returns Integer
+    Integer iValue
+
+    Get ShowFileTitle_State of (phoFileDialog (Self)) to iValue
+
+    Function_Return iValue
+  End_Function
+
+  { MethodType=Property }
+  { Category="LA-Framework" }  
+  { InitialValue=False }  
+  { PropertyType=Boolean }
+  Procedure Set OverwritePrompt_State Integer iValue
+    Set OverwritePrompt_State of (phoFileDialog (Self)) to iValue
+  End_Procedure
+
+  Function OverwritePrompt_State Returns Integer
+    Integer iValue
+
+    Get OverwritePrompt_State of (phoFileDialog (Self)) to iValue
+
+    Function_Return iValue
+  End_Function
+
+  { MethodType=Property }
+  { Category="LA-Framework" }
+  { InitialValue=False }  
+  { PropertyType=Boolean }
+  Procedure Set NoChangeDir_State Integer iValue
+    Set NoChangeDir_State of (phoFileDialog (Self)) to iValue
+  End_Procedure
+
+  Function NoChangeDir_State Returns Integer
+    Integer iValue
+
+    Get NoChangeDir_State of (phoFileDialog (Self)) to iValue
+
+    Function_Return iValue
+  End_Function
+
+  Function GiveLocalFileName String path_file_name Returns String
+    Integer stop
+    String result   
+    
+    Move (Integer (False)) to stop
+    
+    Repeat
+      If (Pos ("\", path_file_name) > 0) Begin
+        Move (Right (path_file_name, (LENGTH (path_file_name) - Pos ("\", path_file_name)))) to path_file_name
+      End
+      Else Begin
+        Move (Integer (True)) to stop
+      End
+    Until stop
+
+    Function_Return path_file_name
+  End_Function
+
+  Procedure prompt
+    String sValue
+    Boolean bWithPathName
+
+    If (Show_Dialog(phoFileDialog(Self))) Begin
+      Get File_Name of (phoFileDialog (Self)) to sValue
+      Get pbWithPathName to bWithPathName
+      If (bWithPathName) Begin
+      End
+      Else Begin
+        Get GiveLocalFileName sValue to sValue
+      End
+      Set value to sValue
+    End
+  End_Procedure
+  
+End_Class

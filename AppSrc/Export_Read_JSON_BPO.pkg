@@ -1,0 +1,136 @@
+﻿Use Windows.pkg
+Use cSeqFileHelper.pkg
+Use cJsonObject.pkg
+
+Struct tLibAnalyzerWorkspace
+  String swsPath 
+  //String dfVersion
+  String[] appsrcPath
+  String[] ddsrcPath
+  String[] dependencies
+End_Struct
+
+Struct tLibAnalyzerDependencyNode
+  String name
+  tLibAnalyzerDependencyNode[] dependencies
+  String[] ambiguousUse
+  String[] conflictingUse
+  String[] reverseUse
+  String[] missingDependencies
+End_Struct
+
+Struct tLibAnalyzerConflictingFileCandidate
+  String workspace
+  String path
+  Integer group
+End_Struct
+
+Struct tLibAnalyzerConflictingFile
+  String name
+  tLibAnalyzerConflictingFileCandidate[] candidates
+  String df26
+  String df25
+End_Struct
+
+Struct tLibAnalyzerDependencyIssue
+  String description
+  String workspace
+  String[] relatedWorkspaces
+  //String df26
+  //String df25
+  String[] impactedFiles
+  String[] referencedFiles
+  String[] suggestions
+End_Struct
+
+Struct tLibAnalyzerOutput
+  String version
+  tLibAnalyzerWorkspace rootWorkspace
+  tLibAnalyzerWorkspace[] dependencies
+  tLibAnalyzerDependencyNode tree
+  tLibAnalyzerConflictingFile[] conflictingFiles
+  tLibAnalyzerDependencyIssue[] errors
+  tLibAnalyzerDependencyIssue[] warnings
+End_Struct
+
+//
+// PHvW 01/09/2026 Call which gave GPF
+//
+Function giveLibAnalyzerOutput_Bug_in_Dataflex String sPath_File Returns tLibAnalyzerOutput
+  tLibAnalyzerOutput stLibAnalyzerOutput
+  
+  Handle  hoFile 
+  Handle  hoJson 
+  Handle  hoJson2
+  Boolean bSuccess
+  String  sJson 
+  String  sData
+
+  Get Create (RefClass (cSeqFileHelper)) to hoFile
+   
+  //
+  // PHvW 31/08/2026 Net line give a GOF on the call 
+  //
+  //                 MultiToWideBuffer in CharTranslate.pkg
+  //
+  Get ReadFileToVariantStr of hoFile sPath_File CP_UTF8 to sJson
+
+  // Parse the Json into a tLibAnalyzerOutput
+  Get Create (RefClass (cJsonObject)) to hoJson
+  
+  Set pbRequireAllMembers of hoJson to False
+  Get ParseString         of hoJson sJson to bSuccess
+  Get JsonToDataType      of hoJson to stLibAnalyzerOutput
+  
+  Send Destroy of hoJson
+  Send Destroy of hoFile
+  
+
+//  // For testing purposes dump out the struct back to Json to visually inspect correctness
+//  Get Create (RefClass (cJsonObject)) to hoJson2
+//  
+//  Set peWhitespace    of hoJson2 to jpWhitespace_Pretty
+//  Send DataTypeToJson of hoJson2 stLibAnalyzerOutput
+//  Get Stringify       of hoJson2 to sData
+  
+  Function_Return stLibAnalyzerOutput
+End_Function
+
+Function giveLibAnalyzerOutput String sPath_File Returns tLibAnalyzerOutput
+  tLibAnalyzerOutput stLibAnalyzerOutput
+  
+  Handle  hoFile 
+  Handle  hoJson 
+  Boolean bSuccess
+  Pointer pBuffer
+  UChar[] jsonData
+  Integer iSize
+
+  Get Create (RefClass (cSeqFileHelper)) to hoFile
+  Get ReadBinFileToBuffer of hoFile sPath_File (&iSize) to pBuffer
+  Move (ResizeArray(jsonData, iSize, 0)) to jsonData
+  Move (MemCopy(AddressOf(jsonData), pBuffer, iSize)) to bSuccess
+
+  // Parse the Json into a tLibAnalyzerOutput
+  Get Create (RefClass (cJsonObject)) to hoJson
+  
+  Set pbRequireAllMembers of hoJson to False
+  Get ParseUtf8 of hoJson jsonData to bSuccess
+  Get JsonToDataType      of hoJson to stLibAnalyzerOutput
+  
+  Send Destroy of hoJson
+  Send Destroy of hoFile
+  
+
+//  // For testing purposes dump out the struct back to Json to visually inspect correctness
+//  Get Create (RefClass (cJsonObject)) to hoJson2
+//  
+//  Set peWhitespace    of hoJson2 to jpWhitespace_Pretty
+//  Send DataTypeToJson of hoJson2 stLibAnalyzerOutput
+//  Get Stringify       of hoJson2 to sData
+  
+  Function_Return stLibAnalyzerOutput
+End_Function
+
+//Send TestIt
+//inkey windowindex

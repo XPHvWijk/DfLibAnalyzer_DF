@@ -1,0 +1,42 @@
+Use Windows.pkg
+Use Focus.pkg
+
+Class LA_cCheckbox is a Checkbox
+    
+  Procedure Construct_Object
+    Forward Send Construct_Object
+
+  End_Procedure
+
+  Procedure End_Construct_Object
+    Forward Send End_Construct_Object
+
+  End_Procedure
+
+  Procedure Page Integer iPage 
+    tOsVersionInfo stOsVersionInfo
+                                                  
+    Handle hWnd                                                             
+    Integer iRet iState iMajorVersion
+    
+    Forward Send Page iPage
+    
+    If (iPage) Begin
+      Move (SizeOfType (tOsVersionInfo)) to stOsVersionInfo.dwOSVersionInfoSize
+      Move (GetVersionExEf (AddressOf (stOsVersionInfo))) to iRet
+      
+      Move stOsVersionInfo.dwMajorVersion to iMajorVersion
+      If (iMajorVersion >= 5) Begin // Only W2K or higher
+        Get window_handle to hWnd                                           
+        If (hWnd) Begin                                                     
+          Move (SendMessage(hWnd,WM_QUERYUISTATE,0,0)) to iRet            
+          If (iRet iand UISF_HIDEFOCUS) Begin                             
+            Move (UIS_CLEAR + (UISF_HIDEFOCUS * 65536)) to iState       
+            Move (SendMessage(hWnd,WM_UPDATEUISTATE,iState,0)) to iRet  
+          End
+        End 
+      End                                                                 
+    End                                                                     
+  End_Procedure  
+  
+End_Class

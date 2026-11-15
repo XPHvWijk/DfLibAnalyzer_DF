@@ -1,0 +1,23 @@
+﻿// Below are used to display Focus Rectangle on Radios, checkboxes, etc.
+
+Define WM_CHANGEUISTATE                for |CI$0127
+Define WM_UPDATEUISTATE                for |CI$0128
+Define WM_QUERYUISTATE                 for |CI$0129
+Define UIS_SET                         for 1       
+Define UIS_CLEAR                       for 2       
+Define UIS_INITIALIZE                  for 3       
+Define UISF_HIDEFOCUS                  for |CI$1   
+Define UISF_HIDEACCEL                  for |CI$2   
+Define UISF_ACTIVE                     for |CI$4   
+
+External_Function GetVersionExEf "GetVersionExA" kernel32.dll Pointer pOsVersionInfo Returns Integer
+
+Struct tOsVersionInfo                                                                                 
+    DWord dwOSVersionInfoSize   // as DWord                                                 
+    DWord dwMajorVersion        // as DWord                                                      
+    DWord dwMinorVersion        // as DWord                                                      
+    DWord dwBuildNumber         // as DWord                                                       
+    DWord dwPlatformId          // as DWord                                                        
+    UChar[128] szCSDVersion     // as Char 128                                                     
+End_Struct
+
