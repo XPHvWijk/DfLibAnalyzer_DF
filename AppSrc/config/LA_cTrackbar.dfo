@@ -1,0 +1,10 @@
+Object
+
+    // OnSetPosition is called when the slider changes
+//    Procedure OnSetPosition
+//        Integer iCurPos
+//    
+//        Get Current_Position to iCurPos
+//    End_Procedure
+
+End_Object

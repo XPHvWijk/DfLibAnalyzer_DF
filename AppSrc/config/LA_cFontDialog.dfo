@@ -1,0 +1,6 @@
+Object
+
+    // Call up the Font Dialog via:
+//    Get FontDialog {of object} to BooleanVariable
+
+End_Object

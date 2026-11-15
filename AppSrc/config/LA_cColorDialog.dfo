@@ -1,0 +1,6 @@
+Object
+
+    // Call up the Select Color Dialog via:
+//    Get SelectedColor {of object} to IntegerVariable
+
+End_Object

@@ -1,0 +1,6 @@
+Object
+
+    // Call up the Select Folder Dialog via:
+//    Get SelectFolder {of object} "Dialog Title" "Starting Folder" to StringVariable
+
+End_Object

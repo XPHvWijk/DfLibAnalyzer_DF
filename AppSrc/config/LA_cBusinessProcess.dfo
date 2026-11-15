@@ -1,0 +1,10 @@
+Object
+
+    // Send DoProcess of this Business Process Object (BPO) to start the process
+    //     Send DoProcess {of object}
+
+    // Place your processing code into Procedure OnProcess
+    Procedure OnProcess
+    End_Procedure
+
+End_Object

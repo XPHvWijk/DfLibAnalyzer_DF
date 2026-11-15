@@ -1,0 +1,6 @@
+Object
+
+    // Call up the Open Dialog via:
+//    Get Show_Dialog {of object} to BooleanVariable
+
+End_Object
