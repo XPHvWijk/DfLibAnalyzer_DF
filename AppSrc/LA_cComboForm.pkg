@@ -1,0 +1,19 @@
+Use Windows.pkg
+
+Class LA_cComboForm is a ComboForm
+    
+  Procedure Construct_Object
+    Forward Send Construct_Object
+
+    Set Label_Col_Offset         to 2
+    Set Label_Justification_Mode to jMode_Right   
+    Set Entry_State              to False
+    
+  End_Procedure
+
+  Procedure End_Construct_Object
+    Forward Send End_Construct_Object
+
+  End_Procedure
+
+End_Class

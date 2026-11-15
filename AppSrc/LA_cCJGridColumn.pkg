@@ -1,0 +1,25 @@
+Use cCJGridColumn.pkg
+
+Class LA_cCJGridColumn is a cCJGridColumn
+    
+  Procedure Construct_Object
+    Forward Send Construct_Object
+    
+    { Category = "LA Extra" }
+    Property Boolean pbDouble_Click           False
+    { Category = "LA Extra" }
+    Property Boolean pbDouble_Click_Clipboard False
+    { Category = "LA Extra" }
+    Property Handle  phpDouble_Click          (RefProc (None))
+  End_Procedure
+
+  Procedure End_Construct_Object
+    Forward Send End_Construct_Object
+
+  End_Procedure
+
+  { MethodType = Event }
+  Procedure onCall_DoubleClick String sValue
+  End_Procedure
+  
+End_Class
