@@ -1,0 +1,14 @@
+{
+   "sLib_Analyzer": "F:\\Data\\Vdf12\\OpenSource\\dflibanalyzer\\dflibanalyzer.exe",
+   "sAdditional_Extensions": "utl,nui",
+   "bScan_Images": true,
+   "sBitmap_Extensions": "ico,bmp",
+   "sCompare_Tool": "C:\\Program Files\\Araxis\\Araxis Merge\\Merge.exe",
+   "bPro_edition": true,
+   "sEditor_or_Explorer": "Open file in the windows Explorer",
+   "sEditor_Location": "C:\\Program Files\\Notepad++\\notepad++.exe",
+   "sLast_Workspace": "F:\\Data\\HRp5\\V-60\\HRp5.V-60d - 26.0.sws",
+   "bLast_Verbose": false,
+   "bLast_Recursive": false,
+   "sLast_Json_File": "F:\\Data\\Vdf12\\OpenSource\\dflibanalyzer\\text_1_0_11.json"
+ }
