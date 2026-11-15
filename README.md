@@ -9,3 +9,4 @@ The gui wrapper allows you to sort this out.
 
 It is build with a subclass layer. Some classes have some code which code be used in your own subclasses.
 
+One note run in 32 bit compile there is one call (size of file) is not working under 64 bit. And those low calls are not my specialty.
